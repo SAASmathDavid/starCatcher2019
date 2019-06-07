@@ -99,7 +99,7 @@ window.onload = function() {
     var ship1 = new Image();
     ship1.src="images/spaceship1.png"
     var ship2 = new Image();
-    ship2.src="images/ship2.jpg"
+    ship2.src="images/ship2.JPG"
 
     // moving stars around the screen and update the players movement
    // our stars are created using a single array with a class of information
