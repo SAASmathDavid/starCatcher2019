@@ -29,6 +29,10 @@ var star = {
         return this._visible;
     },
 
+    setImage: function(img){
+        this._img.src=img;
+    },
+
     //Update the new x and y of the star based on the speed.
     //drawing functionality is left for calling class
     //no input or return
@@ -74,24 +78,47 @@ var badStar = {
     },
 }; // close bad star object
 
+
+var fireMissle = {
+    _x: null,
+    _y: null,
+    _xSpeed: null,
+    _ySpeed: null,
+    _sh: 20,
+    _sw: 20,
+    // add this to the variable list at the top of the star class
+    _visible: true,
+
+    //Create new missle object with given starting position and speed
+    create: function (x, y, xSpeed, ySpeed) {
+        var obj = Object.create(this);
+        obj._x = x;
+        obj._y = y;
+        obj._xSpeed=xSpeed;
+        obj._ySpeed=ySpeed;
+        obj._img = new Image();
+        obj._img.src="images/missle.jpg";
+        return obj;
+    },
+
+    //Update the new x and y of the missle based on the speed.
+    update: function () {
+        this._x+=this._xSpeed;
+        this._y+=this._ySpeed;
+    },
+}; // close bad star object
+
 window.onload = function() {
     //load canvas
     var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext("2d"),
-    w = canvas.width = 800,
-    h = canvas.height = 500;
-    ctx.fillStyle= "rgba(250,0,0,.4)";
-    ctx.fillRect(50,50,w-100,h-100);
-    ctx.fillStyle="black";
-    ctx.font="30px Sans-Serif";
-    ctx.fillText("Capture the Gold Stars. Avoid the Red Stars",w/8,h/2);
-    ctx.fillText("two levels with total scores added to win",w/8,h-200);
-    ctx.fillText("gold stars 25, 50. bad stars at 5, 10",w/8,h-100);
+        w = canvas.width = 800,
+        h = canvas.height = 500;
 
     // load variables
     var p1x=w/2+100, p1y=h/2, p2x=w/2-100, p2y=h/2;
     var gameOn=false;
-    var p1Score=0, p2Score=0, p1Lives=3, p2Lives=3;
+    var p1Score=0, p2Score=0;
 
     //load images
     var background = new Image();
@@ -99,11 +126,11 @@ window.onload = function() {
     var ship1 = new Image();
     ship1.src="images/spaceship1.png"
     var ship2 = new Image();
-    ship2.src="images/spaceship2.png"
+    ship2.src="images/ship2.jpg"
 
     // moving stars around the screen and update the players movement
    // our stars are created using a single array with a class of information
-    var starCount=25;
+    var starCount=50;
     var starArray=[];
 
     // Create an array of stars
@@ -114,14 +141,26 @@ window.onload = function() {
         starArray.push(star.create(w/2,5*i+50,5-Math.random()*10,5-Math.random()*10));
     }  // close load star array
 
-// our BADstars are created using a single array with a class of information
-    var badStarCount=5;
+    // our BADstars are created using a single array with a class of information
+    var badStarCount=10;
     var badStarArray=[];
 
     // Create an array of stars
     for (var i = 0; i < badStarCount; i++) {
         badStarArray.push(badStar.create(w/2,5*i+50,5-Math.random()*10,5-Math.random()*10));
     }    
+
+    var missleArray=[];
+    function missleUpdate() {
+        for (var i = 0; i < missleArray.length; i++){
+            console.log(missleArray)
+            fireMissle[i].update();
+            if (fireMissle[i]._y<0) {
+                missleArray.splice(i,1);
+            }
+        }
+    } // close missle update
+
     function starsUpdate () {
         // to move the stars around
         //  draw star on screen only if visible
@@ -152,8 +191,8 @@ window.onload = function() {
                 if (badStarArray[i]._y>h) {badStarArray[i]._y = 3}
                 if (badStarArray[i]._y<0) {badStarArray[i]._y = h-3}
 
-                if (Math.abs(p1x-badStarArray[i]._x)<20 & Math.abs(p1y-badStarArray[i]._y)<20) {lives(i,1);}
-                if (Math.abs(p2x-badStarArray[i]._x)<20 & Math.abs(p2y-badStarArray[i]._y)<20) {lives(i,2);}
+                if (Math.abs(p1x-badStarArray[i]._x)<20 & Math.abs(p1y-badStarArray[i]._y)<20) {scoringBad(i,1);}
+                if (Math.abs(p2x-badStarArray[i]._x)<20 & Math.abs(p2y-badStarArray[i]._y)<20) {scoringBad(i,2);}
             }
         }//endFor
 
@@ -175,14 +214,12 @@ window.onload = function() {
                 gameOn = 1;
                 main();// (key: space bar to start game)
             }
-            else {gameOn=0;
-                ctx.fillStyle= "rgba(250,0,0,.4)";
-                ctx.fillRect(50,50,w-100,h-100);
-                ctx.fillStyle="black";
-                ctx.font="30px Sans-Serif";
-                ctx.fillText("Capture the Gold Stars. Avoid the Red Stars",w/8,h/2);
-            }
+            else {gameOn=0}
         }//end if
+
+        if (e.keyCode == 77) {
+            missleArray.push(fireMissle.create(p1x,p1y,0,-5));
+        }
 
     }, false);
 
@@ -241,13 +278,14 @@ window.onload = function() {
     //  then calls itself out again
     function main(){
         ctx.clearRect(0,0,w,h);
-        ctx.drawImage(background,0,0,w,h+50);
+        ctx.drawImage(background,0,0,w,h);
         starsUpdate();
         playerUpdate();
+        missleUpdate();
         if (gameOn==1) {requestAnimationFrame(main)};
     } //close main
-    
      //  scoring functions to place and score stars
+    
     function scoring(k,wp) {
         starArray[k]._visible=false;
         if (wp==1) {
@@ -261,43 +299,18 @@ window.onload = function() {
         }
     } //close scoring
 
-    function lives(k,wp) {
-        if (wp == 1) {
-            p1Lives=p1Lives-1;
-            if (p1Lives<=0) {
-                p1Score-=10; 
-                endGame(2);
-                gameOn=false;
-            }
-            $("#p1LivesDisp").text(p1Lives);
-            p1x=w/2, p1y=h/2;
-            badStarArray[k]._visible=false;
-            badStarArray[k]._x=w+900;
-        } //close if wp
-        if (wp == 2) {
-            p2Lives=p2Lives-1;
-            if (p2Lives<=0) {
-                p2Score-=10; 
-                endGame(1);
-                gameOn=false;
-            }
-            $("#p2LivesDisp").text(p2Lives);
-            p2x=w/2, p2y=h/2;
-            badStarArray[k]._visible=false;
-            badStarArray[k]._x=w+900;
-        } //close if wp
-    }   // close lives  
-    
-    function endGame(wp) {
-        ctx.fillStyle= "rgba(250,0,0,.4)";
-        ctx.fillRect(50,50,w-100,h-100);
-        ctx.fillStyle="black";
-        ctx.font="30px Sans-Serif";
-        if (p1Score>p2Score){
-            ctx.fillText("Game over, Player one Wins",w/4,h/2);
+    function scoringBad(k,wp) {
+        badStarArray[k]._visible=false;
+        if (wp==1) {
+            // need to place a small star next to player 1 score
+            p1Score=-4;
+            $("#p1ScoreDisp").text(p1Score);
         }
-        if (p2Score<p1Score){
-            ctx.fillText("Game over, Player two Wins",w/4,h/2);
+        else if (wp==2) {
+            p2Score=-4;
+            $("#p2ScoreDisp").text(p2Score);
         }
-    }  // close gameover
-}    // close onload window 
+    } //close bad scoring
+           
+
+}  // end window on load             
